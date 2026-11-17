@@ -4,6 +4,14 @@
 >
 > 📝 The Chinese [CHANGELOG](./CHANGELOG.md) is the authoritative, item-by-item record; this file carries the English summaries and has historically lagged behind it. Where the two disagree, the Chinese one is current.
 
+### Unreleased (development line)
+
+- 🔎 **The files panel's search box gains a VS Code-style content search, Replace All, and files-to-include / files-to-exclude.** A mode switch flips the box between file-name and file-content searching. Content mode has case-sensitive / whole-word / regex switches and two glob fields (the same grammar the tree and name search use for excludes: a slash-free pattern matches a base name at any depth, a slash pattern is root-anchored, `**/` matches zero or more segments, and a directory pattern claims its subtree). Results group by file with line numbers and highlighted match ranges; clicking a row opens the file AT that line.
+  - **Replace All** confirms first (file and match counts) and only rewrites the files in the current result list. Writes go through `writeWorkspaceText`, so each file keeps its own byte encoding and line endings; a file that changed on disk since the results rendered is skipped and reported on the hint line.
+  - **Two new host routes (`fs.grep` / `fs.grepReplace`)**: inside a git worktree the file inventory comes from `git ls-files --cached --others --exclude-standard` (respecting `.gitignore`), otherwise the directory walk. Binary files, files over 2 MiB, and noise directories such as `node_modules` are skipped; every search is bounded by file / match / scanned-byte budgets and reports `truncated` instead of stalling the host. `updateTab`'s patch accepts an optional `line`, so an in-place open can land on a line too (available to external plugins as well — see the integration guide).
+  - 🧪 Tests: `tests/fs-grep.spec.ts` (query compilers, include globs, walk and skips, budgets, CRLF-preserving replace and the mtime gate), `tests/fs-grep-route.spec.ts` (route shapes, 400 for a bad regex, replace and conflict skip), `tests/file-tree-content-search.spec.tsx` (mode switch, grouping / highlighting / line jump, include·exclude passthrough, confirmed replace, git ink on result rows).
+- 🎨 **Search result rows now show modification status too.** Name-search rows and content-search file groups reuse the file tree's Git ink and letter badge (`M` / `U` / `A` / `D` …), so modified files are color-differentiated from clean ones in the result list exactly as in the explorer.
+
 ### v0.32.1
 
 - 🧩 **DSH 0.2.2-rc.2 support**: the plugin baseline moves to the newest 0.2.2 RC and follows that host's client contract and team service.

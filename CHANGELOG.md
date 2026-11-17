@@ -2,6 +2,14 @@
 
 > 本文档收录 dsh-better-sidebar 的完整发布历史（最新版摘要见 [README](README_ZH.md)；同步发布于 [GitHub Releases](https://github.com/omdsh-dev/DSH-better-sidebar/releases)）。
 
+### 未发布（开发线）
+
+- 🔎 **文件搜索新增 VS Code 式「内容搜索」与全部替换**：文件页搜索框可在「名称 / 内容」两种模式间切换。内容模式带大小写、整词、正则开关，以及 `files to include` / `files to exclude` glob（与树 / 名称搜索的排除语法同源：无斜杠按基名匹配任意深度、含斜杠按根锚定、`**/` 可匹配零段、目录名包含其子树）；结果按文件分组，带行号与命中高亮，点击行直接打开并落到该行。
+  - **全部替换**先弹出确认（显示文件数与命中数），只改当前结果列表里的文件；写盘复用 `writeWorkspaceText`，文件原有字节编码与行尾保持不变，渲染后磁盘又变更的文件跳过并在一行提示里报告。
+  - **宿主侧新增 `fs.grep` / `fs.grepReplace` 两个 `/sidebar/api` 路由**：内容搜索在 git worktree 内用 `git ls-files --cached --others --exclude-standard` 取文件清单（尊重 `.gitignore`），否则回退目录遍历；跳过二进制、超过 2 MiB 的文件以及 `node_modules` 等噪声目录；每次搜索有文件数 / 命中数 / 扫描字节预算，超限返回 `truncated` 而不是卡住宿主。`updateTab` 的 patch 新增可选 `line`，原地打开也能落到指定行（外部插件同样可用，见接入指南）。
+  - 🧪 测试：`tests/fs-grep.spec.ts`（查询编译、include glob、遍历与跳过、预算、CRLF 替换与 mtime 门）、`tests/fs-grep-route.spec.ts`（路由形状、坏正则 400、替换与冲突跳过）、`tests/file-tree-content-search.spec.tsx`（模式切换、分组 / 高亮 / 行跳转、include·exclude 透传、确认替换、结果行的 git 着色）。
+- 🎨 **搜索结果行也显示修改状态**：名称搜索结果与内容搜索的文件分组复用文件树已有的 Git 着色与字母徽标（`M` / `U` / `A` / `D` …），修改过的文件在结果列表里同样与未修改文件颜色区分。
+
 ### v0.32.1
 
 - 🧩 **适配 DSH 0.2.2-rc.2**：插件基线抬到 0.2.2 线的最新 RC，同时跟上这一版宿主的客户端契约与团队服务。

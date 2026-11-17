@@ -751,7 +751,7 @@ export interface SidebarSurface {
    * (`keepMounted`), so a caller that knows its session should pass it.
    * Omitted, the id resolves against the mounted seat.
    */
-  update(tabId: string, patch: { title?: string; path?: string; meta?: unknown }, sessionId?: string): boolean
+  update(tabId: string, patch: { title?: string; path?: string; meta?: unknown; line?: number }, sessionId?: string): boolean
   /** Focus a native tab through the host controller; false when it is not native (same `sessionId` rule as `update`). */
   activate(tabId: string, sessionId?: string): boolean
   /** Whether a tab id belongs to the native surface (same `sessionId` rule as `update`). */
@@ -914,7 +914,10 @@ export interface BetterSidebarService {
    * A **path change is a new open**: the transient landing line a reference
    * carried (#826) is dropped with it, because that line belongs to the
    * navigation that delivered the file — an in-place switch or a rename that
-   * kept it would send the next file to the previous file's line.
+   * kept it would send the next file to the previous file's line. A caller
+   * that wants an in-place open to LAND somewhere passes `line` in the same
+   * patch (the content search's result rows do exactly this); the explicit
+   * line wins over the clearing rule.
    *
    * v0.26.0+: a `sessionId` that is **not the session on screen** patches that
    * session's own layout through the targeted channel (no publish, no notify —
@@ -923,7 +926,7 @@ export interface BetterSidebarService {
    * resolving them against the active session. The active session keeps the
    * publishing path, and an omitted `sessionId` behaves exactly as before.
    */
-  updateTab(tabId: string, patch: { title?: string; path?: string; meta?: unknown }, sessionId?: string): void
+  updateTab(tabId: string, patch: { title?: string; path?: string; meta?: unknown; line?: number }, sessionId?: string): void
   /**
    * Activate an open tab (the tab-bar activation path; fires
    * descriptor.onActivate). An unknown tab id is a strict no-op. `scope`
@@ -1608,7 +1611,7 @@ export function createBetterSidebarService(store: SidebarStore): BetterSidebarSe
   /** Patch an open tab's display fields (a missing tab id is a no-op). */
   const updateTab = (
     tabId: string,
-    patch: { title?: string; path?: string; meta?: unknown },
+    patch: { title?: string; path?: string; meta?: unknown; line?: number },
     sessionId?: string,
   ): void => {
     if (surface?.update(tabId, patch, sessionId) === true) return
@@ -1616,6 +1619,7 @@ export function createBetterSidebarService(store: SidebarStore): BetterSidebarSe
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.path !== undefined ? { path: patch.path } : {}),
       ...(patch.meta !== undefined ? { meta: patch.meta } : {}),
+      ...(patch.line !== undefined ? { line: patch.line } : {}),
     })
     // A named session that is not on screen is patched in ITS own state (a
     // background conversation's file page under a rename — see
